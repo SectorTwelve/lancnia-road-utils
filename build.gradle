@@ -1,0 +1,128 @@
+import groovy.json.JsonOutput
+
+plugins {
+    id 'fabric-loom' version "${loom_version}"
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+def modId = 'lancnia_road_utils'
+def markings = [
+    [name: 'give_way_line', title: 'Give Way Line', directional: true],
+    [name: 'give_way_triangle', title: 'Give Way Triangle', directional: true],
+    [name: 'stop_line', title: 'Stop Line', directional: true],
+    [name: 'box_junction', title: 'Yellow Box Junction', directional: false],
+    [name: 'box_junction_edge', title: 'Yellow Box Junction Edge', directional: true],
+    [name: 'box_junction_corner', title: 'Yellow Box Junction Corner', directional: true],
+    [name: 'white_line_center', title: 'White Centre Line', directional: true],
+    [name: 'white_line_dashed', title: 'White Dashed Centre Line', directional: true],
+    [name: 'white_line_double', title: 'White Double Centre Line', directional: true],
+    [name: 'white_line_edge', title: 'White Edge Line', directional: true],
+    [name: 'yellow_line_single', title: 'Single Yellow Line', directional: true],
+    [name: 'yellow_line_double', title: 'Double Yellow Lines', directional: true],
+    [name: 'zebra_crossing', title: 'Zebra Crossing', directional: true],
+    [name: 'white_hatching', title: 'White Hatching', directional: true],
+    [name: 'zigzag_line', title: 'Zig-Zag Line', directional: true],
+    [name: 'arrow_straight', title: 'Straight Arrow', directional: true],
+    [name: 'arrow_left', title: 'Left Turn Arrow', directional: true],
+    [name: 'arrow_right', title: 'Right Turn Arrow', directional: true],
+    [name: 'parking_bay_corner', title: 'Parking Bay Corner', directional: true]
+]
+def genDir = layout.buildDirectory.dir('generated/resources').get().asFile
+
+// Generates blockstates, models, loot tables, recipes, lang and tags so the repo stays small.
+def generateAssets = tasks.register('generateAssets') {
+    outputs.dir(genDir)
+    inputs.property('markings', markings.toString())
+    doLast {
+        genDir.deleteDir()
+        def writeJson = { path, obj ->
+            def f = new File(genDir, path.toString())
+            f.parentFile.mkdirs()
+            f.text = JsonOutput.prettyPrint(JsonOutput.toJson(obj)) + '\n'
+        }
+        def lang = ['itemGroup.lancnia_road_utils.main': 'Lancnia Road Utils']
+        def pickaxe = []
+        markings.each { m ->
+            def blockModel = modId + ':block/' + m.name
+            def faces = [:]
+            ['down', 'up', 'north', 'south', 'east', 'west'].each { d ->
+                faces[d] = [texture: '#base', cullface: d]
+            }
+            writeJson('assets/' + modId + '/models/block/' + m.name + '.json', [
+                parent: 'minecraft:block/block',
+                textures: [particle: 'minecraft:block/gray_concrete', base: 'minecraft:block/gray_concrete', marking: blockModel],
+                elements: [
+                    [from: [0, 0, 0], to: [16, 16, 16], faces: faces],
+                    [from: [0, 16.01, 0], to: [16, 16.01, 16], faces: [up: [texture: '#marking']]]
+                ]
+            ])
+            writeJson('assets/' + modId + '/models/item/' + m.name + '.json', [parent: blockModel])
+            def variants = m.directional ? [
+                'facing=north': [model: blockModel],
+                'facing=east': [model: blockModel, y: 90],
+                'facing=south': [model: blockModel, y: 180],
+                'facing=west': [model: blockModel, y: 270]
+            ] : ['': [model: blockModel]]
+            writeJson('assets/' + modId + '/blockstates/' + m.name + '.json', [variants: variants])
+            lang['block.' + modId + '.' + m.name] = m.title
+            pickaxe << (modId + ':' + m.name)
+            writeJson('data/' + modId + '/loot_table/blocks/' + m.name + '.json', [
+                type: 'minecraft:block',
+                pools: [[
+                    rolls: 1,
+                    bonus_rolls: 0,
+                    entries: [[type: 'minecraft:item', name: modId + ':' + m.name]],
+                    conditions: [[condition: 'minecraft:survives_explosion']]
+                ]]
+            ])
+            writeJson('data/' + modId + '/recipe/' + m.name + '_from_gray_concrete_stonecutting.json', [
+                type: 'minecraft:stonecutting',
+                ingredient: [item: 'minecraft:gray_concrete'],
+                result: modId + ':' + m.name,
+                count: 4
+            ])
+        }
+        writeJson('assets/' + modId + '/lang/en_us.json', lang)
+        writeJson('data/minecraft/tags/block/mineable/pickaxe.json', [replace: false, values: pickaxe])
+    }
+}
+sourceSets.main.resources.srcDir(generateAssets)
+
+repositories {
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": inputs.properties.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.base.archivesName.get()}" }
+    }
+}

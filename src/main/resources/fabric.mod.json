@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "lancnia_road_utils",
+  "version": "${version}",
+  "name": "Lancnia Road Utils",
+  "description": "Grey-concrete road blocks that mimic UK road markings: give way lines and triangles, yellow box junctions, centre lines, zebra crossings, arrows and more.",
+  "authors": [
+    "Lancnia"
+  ],
+  "license": "MIT",
+  "icon": "assets/lancnia_road_utils/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.lancnia.roadutils.LancniaRoadUtils"
+    ],
+    "client": [
+      "com.lancnia.roadutils.LancniaRoadUtilsClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.17.2",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": ">=0.116.6"
+  }
+}
