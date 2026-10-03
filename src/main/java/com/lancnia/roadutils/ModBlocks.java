@@ -29,6 +29,8 @@ public final class ModBlocks {
 
     public static void register() {
         add("give_way_line", true);
+        add("give_way_centre", true);
+        add("give_way_oncoming", true);
         add("give_way_triangle", true);
         add("stop_line", true);
         add("box_junction", false);
