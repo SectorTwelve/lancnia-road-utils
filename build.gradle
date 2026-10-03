@@ -15,6 +15,8 @@ base {
 def modId = 'lancnia_road_utils'
 def markings = [
     [name: 'give_way_line', title: 'Give Way Line', directional: true],
+    [name: 'give_way_centre', title: 'Give Way Centre', directional: true],
+    [name: 'give_way_oncoming', title: 'Give Way Oncoming', directional: true],
     [name: 'give_way_triangle', title: 'Give Way Triangle', directional: true],
     [name: 'stop_line', title: 'Stop Line', directional: true],
     [name: 'box_junction', title: 'Yellow Box Junction', directional: false],
